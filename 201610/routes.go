@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/pressly/chi"
@@ -44,4 +43,24 @@ func buildRouter() *chi.Mux {
 	// if the context has reached its deadline and return, otherwise the timeout
 	// signal will be just ignored.
 	r.Use(middleware.Timeout(10 * time.Second))
+
+	// This application lets users create polls and vote (best beer, best pizza)
+
+	// GETting / shows links to the polls
+	//   bonus: with totals cached once a second
+	// GETting /login shows auth info form
+	// POSTing /login attempts login
+	// GETting /logout deletes a user's login cookie(s)
+	// GETting /signup shows account info form
+	//   no email required, just hardcoded secret from slides
+	// POSTing /signup attempts account creation
+	// GETting /polls shows paginated list of polls
+	// GETting /polls/create shows poll info form
+	// GETting /polls/:pollID/results shows poll results
+
+	// POSTing /polls/create attempts poll creation
+	// GETting /polls/:pollID displays voting form
+	// POSTing /polls/:pollID submits vote
+
+	return r
 }
