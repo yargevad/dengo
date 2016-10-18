@@ -1,0 +1,91 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "iUzC0HRLcL0Iv8FzWzVySRdiCVA=",
+			"path": "github.com/boltdb/bolt",
+			"revision": "074dffcc83e9f421e261526d297cd93f22a34080",
+			"revisionTime": "2016-10-08T15:24:23Z"
+		},
+		{
+			"checksumSHA1": "CMfwCFcZRDJeIVVbIHa6t4Aewl8=",
+			"origin": "github.com/goware/jwtauth/vendor/github.com/dgrijalva/jwt-go",
+			"path": "github.com/dgrijalva/jwt-go",
+			"revision": "d5f87ca5c3b52eaf56cc8c70c545d8aadd7cbb0a",
+			"revisionTime": "2016-09-13T15:58:18Z"
+		},
+		{
+			"checksumSHA1": "3Tr5vY8q6riEe9DKkktm2fEidVU=",
+			"path": "github.com/goware/jwtauth",
+			"revision": "d5f87ca5c3b52eaf56cc8c70c545d8aadd7cbb0a",
+			"revisionTime": "2016-09-13T15:58:18Z"
+		},
+		{
+			"checksumSHA1": "/Ck2DFxjzCHkO+NZ+XGCPXo4tH0=",
+			"path": "github.com/pkg/errors",
+			"revision": "cbd18b5440315aa74a17dee2e50b67675b872b49",
+			"revisionTime": "2016-06-22T01:00:19Z"
+		},
+		{
+			"checksumSHA1": "+t1MasN6Gr9zPdVNvQfUIKd9zag=",
+			"path": "github.com/pressly/chi",
+			"revision": "9d7c97054ccb91c50561fc32e7089764a70f06fa",
+			"revisionTime": "2016-09-01T21:18:22Z"
+		},
+		{
+			"checksumSHA1": "vAoC5OijLbXuzN14xuQJ/4smmHU=",
+			"path": "github.com/pressly/chi/middleware",
+			"revision": "9d7c97054ccb91c50561fc32e7089764a70f06fa",
+			"revisionTime": "2016-09-01T21:18:22Z"
+		},
+		{
+			"checksumSHA1": "guoYyoeKSawGaznEIHzCbiAYqtc=",
+			"path": "github.com/yargevad/crypto/naclutil",
+			"revision": "c07e53396532a3dea7138cc22e5ca397e4e4c391",
+			"revisionTime": "2016-10-18T05:05:59Z"
+		},
+		{
+			"checksumSHA1": "h+pFYiRHBogczS8/F1NoN3Ata44=",
+			"origin": "github.com/yargevad/crypto/naclutil/vendor/golang.org/x/crypto/curve25519",
+			"path": "golang.org/x/crypto/curve25519",
+			"revision": "c07e53396532a3dea7138cc22e5ca397e4e4c391",
+			"revisionTime": "2016-10-18T05:05:59Z"
+		},
+		{
+			"checksumSHA1": "hl0ImqBoUBVNVmz5ImX6YVBV9JU=",
+			"origin": "github.com/yargevad/crypto/naclutil/vendor/golang.org/x/crypto/nacl/box",
+			"path": "golang.org/x/crypto/nacl/box",
+			"revision": "c07e53396532a3dea7138cc22e5ca397e4e4c391",
+			"revisionTime": "2016-10-18T05:05:59Z"
+		},
+		{
+			"checksumSHA1": "UxdMiKUm6Ajczi6BRNkrPvoAPWQ=",
+			"origin": "github.com/yargevad/crypto/naclutil/vendor/golang.org/x/crypto/nacl/secretbox",
+			"path": "golang.org/x/crypto/nacl/secretbox",
+			"revision": "c07e53396532a3dea7138cc22e5ca397e4e4c391",
+			"revisionTime": "2016-10-18T05:05:59Z"
+		},
+		{
+			"checksumSHA1": "jzb3hLJ0q13oPRct3Zclhnaa94w=",
+			"origin": "github.com/yargevad/crypto/naclutil/vendor/golang.org/x/crypto/poly1305",
+			"path": "golang.org/x/crypto/poly1305",
+			"revision": "c07e53396532a3dea7138cc22e5ca397e4e4c391",
+			"revisionTime": "2016-10-18T05:05:59Z"
+		},
+		{
+			"checksumSHA1": "rpD48Mn9nOFgc5UnDjAHAodxHo4=",
+			"origin": "github.com/yargevad/crypto/naclutil/vendor/golang.org/x/crypto/salsa20/salsa",
+			"path": "golang.org/x/crypto/salsa20/salsa",
+			"revision": "c07e53396532a3dea7138cc22e5ca397e4e4c391",
+			"revisionTime": "2016-10-18T05:05:59Z"
+		},
+		{
+			"checksumSHA1": "c8iMfP5+K3GEg26HJiO0OVVLiM4=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "f64b50fbea64174967a8882830d621a18ee1548e",
+			"revisionTime": "2016-04-14T13:31:22Z"
+		}
+	],
+	"rootPath": "github.com/yargevad/dengo/201610"
+}
