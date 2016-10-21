@@ -5,15 +5,17 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 
 	"github.com/boltdb/bolt"
+	"github.com/uber-go/zap"
 )
 
 // Our application-wide configuration.
 type Env struct {
-	DB *bolt.DB
+	DB  *bolt.DB
+	Log zap.Logger
 }
 
 var keyPath = flag.String("keypath", "./.keys", "where to store keys")
@@ -26,14 +28,15 @@ var env = &Env{}
 func main() {
 	// get values from command line
 	flag.Parse()
+	env.Log = zap.New(zap.NewJSONEncoder(), zap.Output(os.Stdout))
 
 	router := buildRouter()
 	err := env.boltOpen(*dbPath)
 	if err != nil {
-		log.Fatal(err)
+		env.Log.Fatal(err.Error())
 	}
 
 	portSpec := fmt.Sprintf(":%d", *port)
-	log.Printf("Listening on %s...\n", portSpec)
-	log.Fatal(http.ListenAndServe(portSpec, router))
+	env.Log.Info("Listening on " + portSpec)
+	env.Log.Fatal(http.ListenAndServe(portSpec, router).Error())
 }

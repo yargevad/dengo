@@ -48,6 +48,8 @@ func buildRouter() *chi.Mux {
 
 	// GETting / shows links to the polls
 	//   bonus: with totals cached once a second
+	r.Get("/", Index)
+
 	// GETting /login shows auth info form
 	// POSTing /login attempts login
 	// GETting /logout deletes a user's login cookie(s)
