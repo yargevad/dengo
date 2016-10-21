@@ -40,6 +40,18 @@
 			"revisionTime": "2016-09-01T21:18:22Z"
 		},
 		{
+			"checksumSHA1": "cqpj9ymkrBzvDJMtE/6Ou8xNy3w=",
+			"path": "github.com/uber-go/atomic",
+			"revision": "6c2817a9ef3b9315f7d237a652f2ab0dac2aee96",
+			"revisionTime": "2016-10-20T00:45:26Z"
+		},
+		{
+			"checksumSHA1": "j+wWJzvcoh8tITqZSTW/9iXUHBg=",
+			"path": "github.com/uber-go/zap",
+			"revision": "c4939d1166b2220bb45338e21506623b4bbdec50",
+			"revisionTime": "2016-09-29T23:02:16Z"
+		},
+		{
 			"checksumSHA1": "guoYyoeKSawGaznEIHzCbiAYqtc=",
 			"path": "github.com/yargevad/crypto/naclutil",
 			"revision": "c07e53396532a3dea7138cc22e5ca397e4e4c391",
