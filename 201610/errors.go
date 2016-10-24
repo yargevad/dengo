@@ -23,12 +23,13 @@ func ZapLogger(next http.Handler) http.Handler {
 }
 
 type ZapLogFormatter struct {
+	code   int
 	fields []zap.Field
 }
 
 func (z *ZapLogFormatter) FormatRequest(r *http.Request) middleware.LogFormatter {
 	var ctx ZapLogFormatter
-	// TODO: preallocate fields
+	ctx.fields = make([]zap.Field, 0, 10)
 
 	reqID := middleware.GetReqID(r.Context())
 	if reqID != "" {
@@ -51,18 +52,25 @@ func (z *ZapLogFormatter) FormatRequest(r *http.Request) middleware.LogFormatter
 	return &ctx
 }
 
-func (ctx *ZapLogFormatter) FormatResponse(status, bytes int, elapsed time.Duration) {
-	ctx.fields = append(ctx.fields, zap.Int("code", status))
+func (ctx *ZapLogFormatter) FormatResponse(code, bytes int, elapsed time.Duration) {
+	ctx.code = code
+	ctx.fields = append(ctx.fields, zap.Int("code", code))
 	ctx.fields = append(ctx.fields, zap.Int("bytes", bytes))
 	ctx.fields = append(ctx.fields, zap.Duration("elapsed", elapsed))
 }
 
 func (ctx *ZapLogFormatter) Log() {
-	env.Log.Info("served", ctx.fields...)
+	switch {
+	case ctx.code < 500:
+		env.Log.Info("served", ctx.fields...)
+	default:
+		env.Log.Warn("error", ctx.fields...)
+	}
 }
 
 func (ctx *ZapLogFormatter) Recover(err error) {
-	ctx.fields = append(ctx.fields, zap.Object("panic", err))
+	ctx.fields = append(ctx.fields, zap.Stringer("panic", err.(error)))
+	ctx.Log()
 }
 
 func (e *Error) Write(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +86,6 @@ func (e *Error) Write(w http.ResponseWriter, r *http.Request) {
 		mtype, _, err = mime.ParseMediaType(ctypeIn)
 		if err != nil {
 			trace = errors.New("ParseMediaType failed")
-			// structured logs, including stack trace
 			env.Log.Error(err.Error(),
 				zap.String("content-type", ctypeIn),
 				zap.String("trace", fmt.Sprintf("%+v", trace)))
