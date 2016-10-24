@@ -23,7 +23,13 @@ func buildRouter() http.Handler {
 	// print in color, otherwise it will print in black and white.
 	//
 	// Logger prints a request ID if one is provided.
+	//
+	// ZapLogger is an instance of Logger customized to format errors using zap
 	r.Use(ZapLogger)
+
+	// SetOutputType is a middleware that examines the request headers and stores
+	// the corresponding response Content-Type (in the Request.Context) accordingly.
+	r.Use(SetOutputType)
 
 	// Recoverer is a middleware that recovers from panics, logs the panic (and a
 	// backtrace), and returns a HTTP 500 (Internal Server Error) status if
