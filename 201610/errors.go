@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"mime"
 	"net/http"
 
-	"github.com/pkg/errors"
+	"github.com/pressly/chi/middleware"
 	"github.com/uber-go/zap"
 )
 
@@ -15,25 +15,36 @@ type Error struct {
 }
 
 func (e *Error) Write(w http.ResponseWriter, r *http.Request) {
-	// TODO: middleware to stash media type in context
-	//       instead of pulling it from headers and parsing it in multiple places
-	var ctypeIn, ctypeOut, mtype string
-	var err, trace error
+	var ctype string
+	var ok bool
+	ctx := r.Context()
 
-	// scan request for incoming content-type, to determine response type
-	ctypeOut = "text/html"
-	ctypeIn = r.Header.Get("Content-Type")
-	if ctypeIn != "" {
-		mtype, _, err = mime.ParseMediaType(ctypeIn)
-		if err != nil {
-			trace = errors.New("ParseMediaType failed")
-			env.Log.Error(err.Error(),
-				zap.String("content-type", ctypeIn),
-				zap.String("trace", fmt.Sprintf("%+v", trace)))
-		}
+	// Default Content-Type is HTML if it's somehow not set
+	if ctype, ok = ctx.Value("responseType").(string); !ok {
+		ctype = "text/html"
 	}
-	env.Log.Info(errors.Errorf("[%s] (%s) => [%s]", ctypeIn, mtype, ctypeOut).Error())
 
-	// application/json => ditto
-	// text/*, none => text/html
+	// Write error to local logs.
+	env.Log.Error("error",
+		zap.Error(e.Message),
+		zap.Int("code", e.Code),
+		zap.String("reqID", middleware.GetReqID(ctx)))
+
+	w.Header().Set("Content-Type", ctype)
+	w.WriteHeader(e.Code)
+
+	if ctype == "application/json" {
+		// Write JSON-encoded error to client
+		if err := json.NewEncoder(w).Encode(e); err != nil {
+			// XXX: If we can't write out an error, log and continue
+			env.Log.Error("error encode failed",
+				zap.Error(err),
+				zap.String("reqID", middleware.GetReqID(ctx)))
+		}
+
+	} else if ctype == "text/html" {
+		// FIXME: use an actual template here
+		fmt.Fprintf(w, "<html><head><title>%d error</title></head><body><h1>%d</h1><h4>%s</h4</body></html>",
+			e.Code, e.Code, e.Message)
+	}
 }
