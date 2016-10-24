@@ -1,13 +1,14 @@
 package main
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/pressly/chi"
 	"github.com/yargevad/chi/middleware"
 )
 
-func buildRouter() *chi.Mux {
+func buildRouter() http.Handler {
 	r := chi.NewRouter()
 	// RequestID is a middleware that injects a request ID into the context of each
 	// request. A request ID is a string of the form "host.example.com/random-0001",

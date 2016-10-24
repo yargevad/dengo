@@ -69,7 +69,7 @@ func (ctx *ZapLogFormatter) Log() {
 }
 
 func (ctx *ZapLogFormatter) Recover(err error) {
-	ctx.fields = append(ctx.fields, zap.Stringer("panic", err.(error)))
+	ctx.fields = append(ctx.fields, zap.Error("panic", err.(error)))
 	ctx.Log()
 }
 
