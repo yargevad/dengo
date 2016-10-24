@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/pressly/chi"
-	"github.com/pressly/chi/middleware"
+	"github.com/yargevad/chi/middleware"
 )
 
 func buildRouter() *chi.Mux {
@@ -22,7 +22,7 @@ func buildRouter() *chi.Mux {
 	// print in color, otherwise it will print in black and white.
 	//
 	// Logger prints a request ID if one is provided.
-	r.Use(middleware.Logger)
+	r.Use(ZapLogger)
 
 	// Recoverer is a middleware that recovers from panics, logs the panic (and a
 	// backtrace), and returns a HTTP 500 (Internal Server Error) status if
