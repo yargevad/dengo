@@ -16,6 +16,12 @@
 			"revisionTime": "2016-09-13T15:58:18Z"
 		},
 		{
+			"checksumSHA1": "eIfF7wWsELUfJ88/b0nkKo/Abso=",
+			"path": "github.com/gorilla/schema",
+			"revision": "d68043406bea8bd90f7b38e9c54fab18d903ea25",
+			"revisionTime": "2016-07-12T21:52:44Z"
+		},
+		{
 			"checksumSHA1": "3Tr5vY8q6riEe9DKkktm2fEidVU=",
 			"path": "github.com/goware/jwtauth",
 			"revision": "d5f87ca5c3b52eaf56cc8c70c545d8aadd7cbb0a",
