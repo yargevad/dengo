@@ -9,13 +9,15 @@ import (
 	"os"
 
 	"github.com/boltdb/bolt"
+	"github.com/gorilla/schema"
 	"github.com/uber-go/zap"
 )
 
 // Our application-wide configuration.
 type Env struct {
-	DB  *bolt.DB
-	Log zap.Logger
+	DB   *bolt.DB
+	Log  zap.Logger
+	Form *schema.Decoder
 }
 
 var keyPath = flag.String("keypath", "./.keys", "where to store keys")
@@ -29,6 +31,7 @@ func main() {
 	// get values from command line
 	flag.Parse()
 	env.Log = zap.New(zap.NewJSONEncoder(), zap.Output(os.Stdout))
+	env.Form = schema.NewDecoder()
 
 	router := buildRouter()
 	err := env.boltOpen(*dbPath)
