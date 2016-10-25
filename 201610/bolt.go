@@ -18,11 +18,16 @@ func (e *Env) boltOpen(file string) error {
 	}
 
 	err = e.DB.Update(func(tx *bolt.Tx) error {
+		var err error
 		// create buckets
 		for _, name := range boltBuckets {
-			if _, err := tx.CreateBucketIfNotExists([]byte(name)); err != nil {
+			if _, err = tx.CreateBucketIfNotExists([]byte(name)); err != nil {
 				return errors.Wrap(err, "boltdb bucket creation failed")
 			}
+		}
+		err = tx.Commit()
+		if err != nil {
+			return errors.Wrap(err, "commit failed")
 		}
 		return nil
 	})

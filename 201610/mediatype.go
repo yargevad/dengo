@@ -8,6 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	ctypeURLForm = "application/x-www-form-urlencoded"
+	ctypeJSON    = "application/json"
+)
+
 func RequestType(r *http.Request) (mediaType string, err error) {
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "" {
