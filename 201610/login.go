@@ -51,6 +51,12 @@ func LoginPost(w http.ResponseWriter, r *http.Request) {
 		e.Write(w, r)
 		return
 	}
+
+	e = user.SetLoggedIn(w, r)
+	if e != nil {
+		e.Write(w, r)
+		return
+	}
 }
 
 func (u *User) Validate() (*User, *Error) {
@@ -143,4 +149,46 @@ func (u *User) Verify() *Error {
 		return e
 	}
 	return nil
+}
+
+func (u *User) SetLoggedIn(w http.ResponseWriter, r *http.Request) *Error {
+	signed, err := JWTString(u.Name)
+	if err != nil {
+		e := &Error{
+			Code:    http.StatusInternalServerError,
+			Message: errors.Wrap(err, "jwt encoding failed"),
+		}
+		return e
+	}
+
+	inType := r.Context().Value("content-type").(string)
+	switch {
+	case inType == ctypeURLForm:
+		c := &http.Cookie{
+			Name: "jwt", Value: signed, HttpOnly: true, // Secure: true,
+		}
+		http.SetCookie(w, c)
+	case inType == ctypeJSON:
+		w.Header().Set("X-JWT", signed)
+	default:
+		e := &Error{
+			Code:    http.StatusUnsupportedMediaType,
+			Message: errors.New("supported types are form, json"),
+		}
+		return e
+	}
+
+	return nil
+}
+
+func LogAuthErrors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if err, ok := ctx.Value("jwt.err").(error); ok {
+			e := &Error{Code: http.StatusUnauthorized, Message: err}
+			e.Write(w, r)
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }

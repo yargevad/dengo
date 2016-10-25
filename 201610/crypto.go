@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/goware/jwtauth"
@@ -22,18 +21,10 @@ func init() {
 	tokenAuth = jwtauth.New("HS256", privKey, nil)
 }
 
-func jwtString(user int) (string, error) {
-	claims := jwtauth.Claims{"uid": user}.
+func JWTString(name string) (string, error) {
+	claims := jwtauth.Claims{"uid": name}.
 		SetExpiryIn(time.Hour * 24).
 		SetIssuedNow()
 	_, str, err := tokenAuth.Encode(claims)
 	return str, err
-}
-
-func setLoggedIn(w http.ResponseWriter, user int) {
-	/*
-		signed, err := jwtString(user)
-		if err != nil {
-		}
-	*/
 }
