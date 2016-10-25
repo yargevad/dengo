@@ -83,6 +83,9 @@ func (s *Signup) Validate() (*Signup, *Error) {
 	} else if len(s.Secret) == 0 {
 		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Secret is required")}
 		return nil, e
+	} else if s.Secret != env.Secret {
+		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Incorrect secret")}
+		return nil, e
 	}
 	return s, nil
 }
