@@ -28,6 +28,9 @@ func buildRouter() http.Handler {
 	// ZapLogger is an instance of Logger customized to format errors using zap
 	r.Use(ZapLogger)
 
+	// ContentTypeChecks is a middleware that asserts Content-Type is set for POSTs
+	r.Use(ContentTypeChecks)
+
 	// Recoverer is a middleware that recovers from panics, logs the panic (and a
 	// backtrace), and returns a HTTP 500 (Internal Server Error) status if
 	// possible.
@@ -58,6 +61,7 @@ func buildRouter() http.Handler {
 
 	// GETting /login shows auth info form
 	// POSTing /login attempts login
+	r.Post("/login", LoginPost)
 	// GETting /logout deletes a user's login cookie(s)
 	// GETting /signup shows account info form
 	//   no email required, just hardcoded secret from slides

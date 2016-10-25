@@ -5,8 +5,9 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
-	"github.com/uber-go/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -16,33 +17,23 @@ type User struct {
 
 type Signup struct {
 	User
-
 	Secret string
 }
 
-var signupPostMax int64 = 1024
+const (
+	signupPostMax int64 = 1024
+	loginPostMax  int64 = 1024
+	bcryptCost    int   = 13
+)
+
+func LoginPost(w http.ResponseWriter, r *http.Request) {
+}
 
 func SignupPost(w http.ResponseWriter, r *http.Request) {
 	var inType string
-	var err error
 	var e *Error
 
-	// parse incoming content-type
-	if inType, err = RequestType(r); err != nil {
-		e = &Error{Code: http.StatusBadRequest, Message: err}
-		e.Write(w, r)
-		return
-	}
-
-	// content-type is required
-	if inType == "" {
-		e = &Error{
-			Code:    http.StatusBadRequest,
-			Message: errors.New("signup with no content-type"),
-		}
-		e.Write(w, r)
-		return
-	}
+	inType = r.Context().Value("content-type").(string)
 
 	// limit the amount of data we accept for a signup request
 	r.Body = http.MaxBytesReader(w, r.Body, signupPostMax)
@@ -70,7 +61,11 @@ func SignupPost(w http.ResponseWriter, r *http.Request) {
 		e.Write(w, r)
 		return
 	}
-	env.Log.Info("signup", zap.String("name", signup.Name))
+
+	if e = UserCreate(&signup.User); e != nil {
+		e.Write(w, r)
+		return
+	}
 }
 
 func (s *Signup) Validate() (*Signup, *Error) {
@@ -115,11 +110,11 @@ func SignupFromForm(r *http.Request) (*Signup, *Error) {
 }
 
 func SignupFromJSON(r io.Reader) (*Signup, *Error) {
-	var err error
+	var e *Error
 	signup := &Signup{}
 
-	if err = json.NewDecoder(r).Decode(signup); err != nil {
-		e := &Error{
+	if err := json.NewDecoder(r).Decode(signup); err != nil {
+		e = &Error{
 			Code:    http.StatusBadRequest,
 			Message: errors.Wrap(err, "json decoding failed"),
 		}
@@ -129,6 +124,53 @@ func SignupFromJSON(r io.Reader) (*Signup, *Error) {
 	return signup.Validate()
 }
 
-func (e *Env) UserCreate(p *Poll) error {
+func UserCreate(u *User) *Error {
+	var e *Error
+	// bcrypt password
+	bcrypted, err := bcrypt.GenerateFromPassword([]byte(u.Pass), bcryptCost)
+	if err != nil {
+		e = &Error{
+			Code:    http.StatusInternalServerError,
+			Message: errors.Wrap(err, "bcrypt failed"),
+		}
+		return e
+	}
+	u.Pass = string(bcrypted)
+	json, err := json.Marshal(u)
+	if err != nil {
+		e = &Error{
+			Code:    http.StatusInternalServerError,
+			Message: errors.Wrap(err, "user marshal failed"),
+		}
+		return e
+	}
+
+	err = env.DB.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte("users"))
+		if err != nil {
+			return errors.Wrap(err, "bucket error")
+		}
+		if val := b.Get([]byte(u.Name)); val != nil {
+			return errors.New("user exists")
+		}
+		err = b.Put([]byte(u.Name), json)
+		if err != nil {
+			return errors.Wrap(err, "create failed")
+		}
+		err = tx.Commit()
+		if err != nil {
+			return errors.Wrap(err, "commit failed")
+		}
+		return nil
+	})
+
+	if err != nil {
+		if err.Error() == "user exists" {
+			e = &Error{Code: http.StatusConflict, Message: err}
+		} else {
+			e = &Error{Code: http.StatusInternalServerError, Message: err}
+		}
+		return e
+	}
 	return nil
 }
