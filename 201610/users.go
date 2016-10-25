@@ -14,6 +14,12 @@ type User struct {
 	Pass string
 }
 
+type Signup struct {
+	User
+
+	Secret string
+}
+
 var signupPostMax int64 = 1024
 
 func SignupPost(w http.ResponseWriter, r *http.Request) {
@@ -42,16 +48,16 @@ func SignupPost(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, signupPostMax)
 	defer r.Body.Close()
 
-	var user *User
+	var signup *Signup
 	switch {
 	case inType == "application/x-www-form-urlencoded":
-		user, e = UserFromForm(r)
+		signup, e = SignupFromForm(r)
 		if e != nil {
 			e.Write(w, r)
 			return
 		}
 	case inType == "application/json":
-		user, e = UserFromJSON(r.Body)
+		signup, e = SignupFromJSON(r.Body)
 		if e != nil {
 			e.Write(w, r)
 			return
@@ -64,11 +70,26 @@ func SignupPost(w http.ResponseWriter, r *http.Request) {
 		e.Write(w, r)
 		return
 	}
-	env.Log.Info("user create", zap.String("name", user.Name))
+	env.Log.Info("signup", zap.String("name", signup.Name))
 }
 
-func UserFromForm(r *http.Request) (*User, *Error) {
-	var user User
+func (s *Signup) Validate() (*Signup, *Error) {
+	if len(s.Name) == 0 {
+		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Name is required")}
+		return nil, e
+	} else if len(s.Pass) == 0 {
+		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Password is required")}
+		return nil, e
+	} else if len(s.Secret) == 0 {
+		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Secret is required")}
+		return nil, e
+	}
+	return s, nil
+}
+
+func SignupFromForm(r *http.Request) (*Signup, *Error) {
+	var err error
+	signup := &Signup{}
 
 	if err = r.ParseForm(); err != nil {
 		e := &Error{
@@ -78,7 +99,7 @@ func UserFromForm(r *http.Request) (*User, *Error) {
 		return nil, e
 	}
 
-	err = env.Form.Decode(&user, r.PostForm)
+	err = env.Form.Decode(signup, r.PostForm)
 	if err != nil {
 		e := &Error{
 			Code:    http.StatusBadRequest,
@@ -87,13 +108,14 @@ func UserFromForm(r *http.Request) (*User, *Error) {
 		return nil, e
 	}
 
-	return &user, nil
+	return signup.Validate()
 }
 
-func UserFromJSON(r io.Reader) (*User, *Error) {
+func SignupFromJSON(r io.Reader) (*Signup, *Error) {
 	var err error
-	var user User
-	if err = json.NewDecoder(r).Decode(&user); err != nil {
+	signup := &Signup{}
+
+	if err = json.NewDecoder(r).Decode(signup); err != nil {
 		e := &Error{
 			Code:    http.StatusBadRequest,
 			Message: errors.Wrap(err, "json decoding failed"),
@@ -101,7 +123,7 @@ func UserFromJSON(r io.Reader) (*User, *Error) {
 		return nil, e
 	}
 
-	return &user, nil
+	return signup.Validate()
 }
 
 func (e *Env) UserCreate(p *Poll) error {
