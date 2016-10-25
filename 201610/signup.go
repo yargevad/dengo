@@ -47,18 +47,14 @@ func SignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if e = UserCreate(&signup.User); e != nil {
+	if e = signup.Save(); e != nil {
 		e.Write(w, r)
 		return
 	}
 }
 
 func (s *Signup) Validate() (*Signup, *Error) {
-	if len(s.Name) == 0 {
-		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Name is required")}
-		return nil, e
-	} else if len(s.Pass) == 0 {
-		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Password is required")}
+	if _, e := s.User.Validate(); e != nil {
 		return nil, e
 	} else if len(s.Secret) == 0 {
 		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Secret is required")}
@@ -109,8 +105,10 @@ func SignupFromJSON(r io.Reader) (*Signup, *Error) {
 	return signup.Validate()
 }
 
-func UserCreate(u *User) *Error {
+func (s *Signup) Save() *Error {
 	var e *Error
+	code := http.StatusInternalServerError
+	u := s.User
 	// bcrypt password
 	bcrypted, err := bcrypt.GenerateFromPassword([]byte(u.Pass), bcryptCost)
 	if err != nil {
@@ -136,6 +134,7 @@ func UserCreate(u *User) *Error {
 			return errors.Wrap(err, "bucket error")
 		}
 		if val := b.Get([]byte(u.Name)); val != nil {
+			code = http.StatusConflict
 			return errors.New("user exists")
 		}
 		err = b.Put([]byte(u.Name), json)
@@ -150,11 +149,7 @@ func UserCreate(u *User) *Error {
 	})
 
 	if err != nil {
-		if err.Error() == "user exists" {
-			e = &Error{Code: http.StatusConflict, Message: err}
-		} else {
-			e = &Error{Code: http.StatusInternalServerError, Message: err}
-		}
+		e = &Error{Code: code, Message: err}
 		return e
 	}
 	return nil

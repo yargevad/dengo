@@ -43,7 +43,7 @@ func main() {
 	env.Form = schema.NewDecoder()
 
 	router := buildRouter()
-	err := env.boltOpen(*dbPath)
+	err := BoltOpen(*dbPath)
 	if err != nil {
 		env.Log.Fatal(err.Error())
 	}
