@@ -10,11 +10,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type User struct {
-	Name string
-	Pass string
-}
-
 type Signup struct {
 	User
 	Secret string
@@ -22,12 +17,8 @@ type Signup struct {
 
 const (
 	signupPostMax int64 = 1024
-	loginPostMax  int64 = 1024
 	bcryptCost    int   = 13
 )
-
-func LoginPost(w http.ResponseWriter, r *http.Request) {
-}
 
 func SignupPost(w http.ResponseWriter, r *http.Request) {
 	var inType string
@@ -41,23 +32,17 @@ func SignupPost(w http.ResponseWriter, r *http.Request) {
 
 	var signup *Signup
 	switch {
-	case inType == "application/x-www-form-urlencoded":
+	case inType == ctypeURLForm:
 		signup, e = SignupFromForm(r)
-		if e != nil {
-			e.Write(w, r)
-			return
-		}
-	case inType == "application/json":
+	case inType == ctypeJSON:
 		signup, e = SignupFromJSON(r.Body)
-		if e != nil {
-			e.Write(w, r)
-			return
-		}
 	default:
 		e = &Error{
 			Code:    http.StatusUnsupportedMediaType,
-			Message: errors.New("supported input types are form, json"),
+			Message: errors.New("supported types are form, json"),
 		}
+	}
+	if e != nil {
 		e.Write(w, r)
 		return
 	}
