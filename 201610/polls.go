@@ -11,10 +11,10 @@ type PollOption struct {
 	Votes    map[string]bool
 }
 
-func (e *Env) PollCreate(p *Poll) error {
+func PollCreate(p *Poll) error {
 	return nil
 }
 
-func (e *Env) PollListing() ([]Poll, error) {
+func PollListing() ([]Poll, error) {
 	return nil, nil
 }

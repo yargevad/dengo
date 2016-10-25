@@ -6,7 +6,7 @@ import (
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	polls, err := env.PollListing()
+	polls, err := PollListing()
 	if err != nil {
 		e := &Error{500, err}
 		e.Write(w, r)
