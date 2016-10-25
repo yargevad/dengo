@@ -10,6 +10,7 @@ import (
 
 func buildRouter() http.Handler {
 	r := chi.NewRouter()
+
 	// RequestID is a middleware that injects a request ID into the context of each
 	// request. A request ID is a string of the form "host.example.com/random-0001",
 	// where "random" is a base62 random string that uniquely identifies this go
@@ -36,7 +37,9 @@ func buildRouter() http.Handler {
 	// possible.
 	//
 	// Recoverer prints a request ID if one is provided.
-	r.Use(middleware.Recoverer)
+	//
+	// ZapRecoverer is an instance of Recoverer customized to format errors using zap
+	r.Use(ZapRecoverer)
 
 	// CloseNotify is a middleware that cancels ctx when the underlying
 	// connection has gone away. It can be used to cancel long operations

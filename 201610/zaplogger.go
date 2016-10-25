@@ -10,6 +10,10 @@ import (
 
 var zapLogFormatter *ZapLogFormatter
 
+func ZapRecoverer(next http.Handler) http.Handler {
+	return middleware.FormattedRecoverer(zapLogFormatter, next)
+}
+
 func ZapLogger(next http.Handler) http.Handler {
 	return middleware.FormattedLogger(zapLogFormatter, next)
 }

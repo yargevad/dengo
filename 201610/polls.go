@@ -1,7 +1,7 @@
 package main
 
 type Poll struct {
-	ID       int
+	Name     string
 	Question string
 	Options  []PollOption
 }
@@ -11,8 +11,8 @@ type PollOption struct {
 	Votes    map[string]bool
 }
 
-func (e *Env) PollCreate(p *Poll) (int, error) {
-	return -1, nil
+func (e *Env) PollCreate(p *Poll) error {
+	return nil
 }
 
 func (e *Env) PollListing() ([]Poll, error) {

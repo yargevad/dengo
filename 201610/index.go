@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/pkg/errors"
+	_ "github.com/pkg/errors"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -14,8 +14,8 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		e.Write(w, r)
 	}
 
-	e := &Error{403, errors.New("foo")}
-	e.Write(w, r)
+	//e := &Error{403, errors.New("foo")}
+	//e.Write(w, r)
 
 	fmt.Fprintf(w, "%v+", polls)
 }
