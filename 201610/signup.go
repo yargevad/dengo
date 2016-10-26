@@ -116,7 +116,7 @@ func (s *Signup) Save() *Error {
 		return e
 	}
 	u.Pass = string(bcrypted)
-	json, err := json.Marshal(u)
+	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		e = &Error{
 			Code:    http.StatusInternalServerError,
@@ -126,28 +126,23 @@ func (s *Signup) Save() *Error {
 	}
 
 	err = env.DB.Update(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte("users"))
-		if err != nil {
-			return errors.Wrap(err, "bucket error")
+		b := tx.Bucket([]byte("users"))
+		if b == nil {
+			return errors.New("no users bucket")
 		}
 		if val := b.Get([]byte(u.Name)); val != nil {
 			code = http.StatusConflict
 			return errors.New("user exists")
 		}
-		err = b.Put([]byte(u.Name), json)
+		err := b.Put([]byte(u.Name), jsonBytes)
 		if err != nil {
 			return errors.Wrap(err, "create failed")
-		}
-		err = tx.Commit()
-		if err != nil {
-			return errors.Wrap(err, "commit failed")
 		}
 		return nil
 	})
 
 	if err != nil {
-		e = &Error{Code: code, Message: err}
-		return e
+		return &Error{Code: code, Message: err}
 	}
 	return nil
 }

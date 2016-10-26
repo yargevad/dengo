@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
 )
 
@@ -23,7 +24,45 @@ const (
 	pollPostMax int64 = 4096
 )
 
-func PollsGet(w http.ResponseWriter, r *http.Request)       {}
+func PollsGet(w http.ResponseWriter, r *http.Request) {
+	code := http.StatusInternalServerError
+	//inType := r.Context().Value("content-type").(string)
+	// TODO: pagination
+	polls := map[string]Poll{}
+	err := env.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("polls"))
+		if b == nil {
+			return errors.New("no poll bucket")
+		}
+		// iterate over all keys in the bucket
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var poll Poll
+			err := json.Unmarshal(v, &poll)
+			if err != nil {
+				return errors.Wrap(err, "poll unmarshal failed")
+			}
+			polls[string(k)] = poll
+		}
+		return nil
+	})
+
+	if err != nil {
+		e := &Error{Code: code, Message: err}
+		e.Write(w, r)
+		return
+	}
+
+	// dump polls to client
+	if err = json.NewEncoder(w).Encode(polls); err != nil {
+		e := &Error{Code: code, Message: errors.Wrap(err, "poll marshal failed")}
+		e.Write(w, r)
+		return
+	}
+
+	return
+}
+
 func PollResultsGet(w http.ResponseWriter, r *http.Request) {}
 func PollsCreateGet(w http.ResponseWriter, r *http.Request) {}
 
@@ -118,15 +157,37 @@ func PollFromJSON(r io.Reader) (*Poll, *Error) {
 	return poll.Validate()
 }
 
-func (p *Poll) Save() *Error { return nil }
+func (p *Poll) Save() *Error {
+	code := http.StatusInternalServerError
+	jsonBytes, err := json.Marshal(p)
+	if err != nil {
+		return &Error{
+			Code:    http.StatusInternalServerError,
+			Message: errors.Wrap(err, "poll marshal failed"),
+		}
+	}
+
+	err = env.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("polls"))
+		if b == nil {
+			return errors.New("no poll bucket")
+		}
+		err := b.Put([]byte(p.Name), jsonBytes)
+		if err != nil {
+			return errors.Wrap(err, "create failed")
+		}
+		return nil
+	})
+
+	if err != nil {
+		return &Error{Code: code, Message: err}
+	}
+	return nil
+}
 
 func PollResponsePost(w http.ResponseWriter, r *http.Request) {}
 func PollVoteGet(w http.ResponseWriter, r *http.Request)      {}
 func PollVotePost(w http.ResponseWriter, r *http.Request)     {}
-
-func PollCreate(p *Poll) error {
-	return nil
-}
 
 func PollListing() ([]Poll, error) {
 	return nil, nil

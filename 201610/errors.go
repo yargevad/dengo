@@ -18,6 +18,7 @@ func (e *Error) Write(w http.ResponseWriter, r *http.Request) {
 	var ctype string
 	var ok bool
 	ctx := r.Context()
+	reqID := middleware.GetReqID(ctx)
 
 	// Default Content-Type is HTML if it's somehow not set
 	if ctype, ok = ctx.Value("responseType").(string); !ok {
@@ -28,7 +29,7 @@ func (e *Error) Write(w http.ResponseWriter, r *http.Request) {
 	env.Log.Error("error",
 		zap.Error(e.Message),
 		zap.Int("code", e.Code),
-		zap.String("reqID", middleware.GetReqID(ctx)))
+		zap.String("reqID", reqID))
 
 	w.Header().Set("Content-Type", ctype)
 	w.WriteHeader(e.Code)
@@ -39,7 +40,7 @@ func (e *Error) Write(w http.ResponseWriter, r *http.Request) {
 			// XXX: If we can't write out an error, log and continue
 			env.Log.Error("error encode failed",
 				zap.Error(err),
-				zap.String("reqID", middleware.GetReqID(ctx)))
+				zap.String("reqID", reqID))
 		}
 
 	} else if ctype == "text/html" {
