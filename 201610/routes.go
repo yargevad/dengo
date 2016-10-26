@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/goware/jwtauth"
 	"github.com/pressly/chi"
 	"github.com/yargevad/chi/middleware"
 )
@@ -62,19 +63,35 @@ func buildRouter() http.Handler {
 	// GETting /login shows auth info form
 	// POSTing /login attempts login
 	r.Post("/login", LoginPost)
+
 	// GETting /logout deletes a user's login cookie(s)
+	r.Get("/logout", LogoutGet)
 	// GETting /signup shows account info form
 	//   no email required, just hardcoded secret from slides
 	// POSTing /signup attempts account creation
 	r.Post("/signup", SignupPost)
 
-	// GETting /polls shows paginated list of polls
-	// GETting /polls/create shows poll info form
-	// GETting /polls/:pollID/results shows poll results
+	r.Route("/polls", func(r chi.Router) {
+		// GETting /polls shows paginated list of polls
+		r.Get("/", PollsGet)
+		// GETting /polls/:pollID/results shows poll results
+		r.Get("/:pollID/results", PollResultsGet)
 
-	// POSTing /polls/create attempts poll creation
-	// GETting /polls/:pollID displays voting form
-	// POSTing /polls/:pollID submits vote
+		r.Group(func(r chi.Router) {
+			r.Use(tokenAuth.Verifier)
+			r.Use(LogAuthErrors)
+			r.Use(jwtauth.Authenticator)
+
+			// GETting /polls/create shows poll info form
+			r.Get("/create", PollsCreateGet)
+			// POSTing /polls/create attempts poll creation
+			r.Post("/create", PollsCreatePost)
+			// GETting /polls/:pollID displays voting form
+			r.Get("/:pollID", PollVoteGet)
+			// POSTing /polls/:pollID submits vote
+			r.Post("/:pollID", PollVotePost)
+		})
+	})
 
 	return r
 }

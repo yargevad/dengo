@@ -21,20 +21,18 @@ const (
 )
 
 func SignupPost(w http.ResponseWriter, r *http.Request) {
-	var inType string
-	var e *Error
-
-	inType = r.Context().Value("content-type").(string)
+	inType := r.Context().Value("content-type").(string)
 
 	// limit the amount of data we accept for a signup request
 	r.Body = http.MaxBytesReader(w, r.Body, signupPostMax)
 	defer r.Body.Close()
 
 	var signup *Signup
+	var e *Error
 	switch {
-	case inType == ctypeURLForm:
+	case inType == FormURL:
 		signup, e = SignupFromForm(r)
-	case inType == ctypeJSON:
+	case inType == JSON:
 		signup, e = SignupFromJSON(r.Body)
 	default:
 		e = &Error{
@@ -91,11 +89,10 @@ func SignupFromForm(r *http.Request) (*Signup, *Error) {
 }
 
 func SignupFromJSON(r io.Reader) (*Signup, *Error) {
-	var e *Error
 	signup := &Signup{}
 
 	if err := json.NewDecoder(r).Decode(signup); err != nil {
-		e = &Error{
+		e := &Error{
 			Code:    http.StatusBadRequest,
 			Message: errors.Wrap(err, "json decoding failed"),
 		}

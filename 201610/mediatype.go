@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	ctypeURLForm = "application/x-www-form-urlencoded"
-	ctypeJSON    = "application/json"
+	FormURL = "application/x-www-form-urlencoded"
+	JSON    = "application/json"
 )
 
 func RequestType(r *http.Request) (mediaType string, err error) {

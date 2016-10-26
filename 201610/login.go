@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
@@ -20,20 +22,18 @@ const (
 )
 
 func LoginPost(w http.ResponseWriter, r *http.Request) {
-	var inType string
-	var e *Error
-
-	inType = r.Context().Value("content-type").(string)
+	inType := r.Context().Value("content-type").(string)
 
 	// limit the amount of data we accept for a login request
 	r.Body = http.MaxBytesReader(w, r.Body, loginPostMax)
 	defer r.Body.Close()
 
 	var user *User
+	var e *Error
 	switch {
-	case inType == ctypeURLForm:
+	case inType == FormURL:
 		user, e = UserFromForm(r)
-	case inType == ctypeJSON:
+	case inType == JSON:
 		user, e = UserFromJSON(r.Body)
 	default:
 		e = &Error{
@@ -163,12 +163,12 @@ func (u *User) SetLoggedIn(w http.ResponseWriter, r *http.Request) *Error {
 
 	inType := r.Context().Value("content-type").(string)
 	switch {
-	case inType == ctypeURLForm:
+	case inType == FormURL:
 		c := &http.Cookie{
 			Name: "jwt", Value: signed, HttpOnly: true, // Secure: true,
 		}
 		http.SetCookie(w, c)
-	case inType == ctypeJSON:
+	case inType == JSON:
 		w.Header().Set("X-JWT", signed)
 	default:
 		e := &Error{
@@ -179,6 +179,13 @@ func (u *User) SetLoggedIn(w http.ResponseWriter, r *http.Request) *Error {
 	}
 
 	return nil
+}
+
+func LogoutGet(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Set-Cookie", fmt.Sprintf("jwt=; expires=%s; HttpOnly",
+		time.Now().Format(time.RFC1123)))
+	w.Header().Set("Location", "/")
+	w.WriteHeader(http.StatusFound)
 }
 
 func LogAuthErrors(next http.Handler) http.Handler {

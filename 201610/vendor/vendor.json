@@ -64,6 +64,18 @@
 			"revisionTime": "2016-10-18T05:05:59Z"
 		},
 		{
+			"checksumSHA1": "vE43s37+4CJ2CDU6TlOUOYE0K9c=",
+			"path": "golang.org/x/crypto/bcrypt",
+			"revision": "d81fdb778bf2c40a91b24519d60cdc5767318829",
+			"revisionTime": "2016-07-05T16:05:20Z"
+		},
+		{
+			"checksumSHA1": "JsJdKXhz87gWenMwBeejTOeNE7k=",
+			"path": "golang.org/x/crypto/blowfish",
+			"revision": "d81fdb778bf2c40a91b24519d60cdc5767318829",
+			"revisionTime": "2016-07-05T16:05:20Z"
+		},
+		{
 			"checksumSHA1": "h+pFYiRHBogczS8/F1NoN3Ata44=",
 			"origin": "github.com/yargevad/crypto/naclutil/vendor/golang.org/x/crypto/curve25519",
 			"path": "golang.org/x/crypto/curve25519",
