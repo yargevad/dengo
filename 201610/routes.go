@@ -86,6 +86,8 @@ func buildRouter() http.Handler {
 			r.Get("/create", PollsCreateGet)
 			// POSTing /polls/create attempts poll creation
 			r.Post("/create", PollsCreatePost)
+			// POSTing /polls/:pollID/response adds a response
+			r.Post("/:pollID/response", PollResponsePost)
 			// GETting /polls/:pollID displays voting form
 			r.Get("/:pollID", PollVoteGet)
 			// POSTing /polls/:pollID submits vote

@@ -59,7 +59,24 @@ func PollsCreatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *Poll) Validate() (*Poll, *Error) {
-	// FIXME: no-op
+	if len(p.Name) == 0 {
+		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Name is required")}
+		return nil, e
+	} else if len(p.Question) == 0 {
+		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Poll is required")}
+		return nil, e
+	} else if len(p.Options) == 0 {
+		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Options is required")}
+		return nil, e
+	}
+
+	for _, option := range p.Options {
+		if len(option.Response) == 0 {
+			e := &Error{Code: http.StatusBadRequest, Message: errors.New("Response is required")}
+			return nil, e
+		}
+	}
+
 	return p, nil
 }
 
@@ -103,8 +120,9 @@ func PollFromJSON(r io.Reader) (*Poll, *Error) {
 
 func (p *Poll) Save() *Error { return nil }
 
-func PollVoteGet(w http.ResponseWriter, r *http.Request)  {}
-func PollVotePost(w http.ResponseWriter, r *http.Request) {}
+func PollResponsePost(w http.ResponseWriter, r *http.Request) {}
+func PollVoteGet(w http.ResponseWriter, r *http.Request)      {}
+func PollVotePost(w http.ResponseWriter, r *http.Request)     {}
 
 func PollCreate(p *Poll) error {
 	return nil
