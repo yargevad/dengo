@@ -1,8 +1,10 @@
 package main
 
 import (
+	"net/http"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/goware/jwtauth"
 	"github.com/yargevad/crypto/naclutil"
 )
@@ -22,9 +24,23 @@ func init() {
 }
 
 func JWTString(name string) (string, error) {
-	claims := jwtauth.Claims{"uid": name}.
+	claims := jwtauth.Claims{"user": name}.
 		SetExpiryIn(time.Hour * 24).
 		SetIssuedNow()
 	_, str, err := tokenAuth.Encode(claims)
 	return str, err
+}
+
+func JWTUser(r *http.Request) string {
+	ctx := r.Context()
+	token, ok := ctx.Value("jwt").(*jwt.Token)
+	if !ok {
+		return ""
+	}
+	claims := token.Claims
+	user, ok := claims["user"].(string)
+	if !ok {
+		return ""
+	}
+	return user
 }

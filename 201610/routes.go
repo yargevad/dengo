@@ -61,37 +61,38 @@ func buildRouter() http.Handler {
 	r.Get("/", Index)
 
 	// GETting /login shows auth info form
-	// POSTing /login attempts login
+	// Attempts login
 	r.Post("/login", LoginPost)
 
-	// GETting /logout deletes a user's login cookie(s)
+	// Deletes a user's login cookie(s)
 	r.Get("/logout", LogoutGet)
 	// GETting /signup shows account info form
 	//   no email required, just hardcoded secret from slides
-	// POSTing /signup attempts account creation
+	// Attempts account creation
 	r.Post("/signup", SignupPost)
 
 	r.Route("/polls", func(r chi.Router) {
-		// GETting /polls shows paginated list of polls
+		// Shows paginated list of polls
 		r.Get("/", PollsGet)
-		// GETting /polls/:pollID/results shows poll results
-		r.Get("/:pollID/results", PollResultsGet)
+		// Shows poll results
+		r.Get("/:pollname/results", PollResultsGet)
 
+		// The handlers in this group reqire successful login first.
 		r.Group(func(r chi.Router) {
 			r.Use(tokenAuth.Verifier)
 			r.Use(LogAuthErrors)
 			r.Use(jwtauth.Authenticator)
 
-			// GETting /polls/create shows poll info form
+			// Shows poll info form
 			r.Get("/create", PollsCreateGet)
-			// POSTing /polls/create attempts poll creation
+			// Attempts poll creation
 			r.Post("/create", PollsCreatePost)
-			// POSTing /polls/:pollID/response adds a response
-			r.Post("/:pollID/response", PollResponsePost)
-			// GETting /polls/:pollID displays voting form
-			r.Get("/:pollID", PollVoteGet)
-			// POSTing /polls/:pollID submits vote
-			r.Post("/:pollID", PollVotePost)
+			// Adds a response to an existing poll
+			r.Post("/:pollname/response", PollResponsePost)
+			// Displays voting form
+			r.Get("/:pollname", PollVoteGet)
+			// Submits vote
+			r.Post("/:pollname", PollVotePost)
 		})
 	})
 

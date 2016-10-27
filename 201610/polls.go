@@ -7,12 +7,13 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
+	"github.com/pressly/chi"
 )
 
 type Poll struct {
 	Name     string
 	Question string
-	Options  []PollOption
+	Options  []*PollOption
 }
 
 type PollOption struct {
@@ -54,6 +55,7 @@ func PollsGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// dump polls to client
+	// TODO: format with a template if request wasn't JSON
 	if err = json.NewEncoder(w).Encode(polls); err != nil {
 		e := &Error{Code: code, Message: errors.Wrap(err, "poll marshal failed")}
 		e.Write(w, r)
@@ -187,7 +189,129 @@ func (p *Poll) Save() *Error {
 
 func PollResponsePost(w http.ResponseWriter, r *http.Request) {}
 func PollVoteGet(w http.ResponseWriter, r *http.Request)      {}
-func PollVotePost(w http.ResponseWriter, r *http.Request)     {}
+
+func PollVotePost(w http.ResponseWriter, r *http.Request) {
+	inType := r.Context().Value("content-type").(string)
+	pollName := chi.URLParam(r, "pollname")
+
+	// limit the amount of data we accept for a "poll create" request
+	r.Body = http.MaxBytesReader(w, r.Body, pollPostMax)
+	defer r.Body.Close()
+
+	var option *PollOption
+	var e *Error
+	switch {
+	case inType == FormURL:
+		option, e = PollOptionFromForm(r)
+	case inType == JSON:
+		option, e = PollOptionFromJSON(r.Body)
+	default:
+		e = &Error{
+			Code:    http.StatusUnsupportedMediaType,
+			Message: errors.New("supported types are form, json"),
+		}
+	}
+	if e != nil {
+		e.Write(w, r)
+		return
+	}
+
+	e = option.Vote(pollName, JWTUser(r))
+	if e != nil {
+		e.Write(w, r)
+		return
+	}
+}
+
+func (o *PollOption) Validate() (*PollOption, *Error) {
+	if len(o.Response) == 0 {
+		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Response is required")}
+		return nil, e
+	}
+	return o, nil
+}
+
+func PollOptionFromForm(r *http.Request) (*PollOption, *Error) {
+	var err error
+	option := &PollOption{}
+
+	if err = r.ParseForm(); err != nil {
+		e := &Error{
+			Code:    http.StatusBadRequest,
+			Message: errors.Wrap(err, "ParseForm failed"),
+		}
+		return nil, e
+	}
+
+	err = env.Form.Decode(option, r.PostForm)
+	if err != nil {
+		e := &Error{
+			Code:    http.StatusBadRequest,
+			Message: errors.Wrap(err, "Decode failed"),
+		}
+		return nil, e
+	}
+
+	return option.Validate()
+}
+
+func PollOptionFromJSON(r io.Reader) (*PollOption, *Error) {
+	option := &PollOption{}
+	if err := json.NewDecoder(r).Decode(option); err != nil {
+		e := &Error{
+			Code:    http.StatusBadRequest,
+			Message: errors.Wrap(err, "json decoding failed"),
+		}
+		return nil, e
+	}
+	return option.Validate()
+}
+
+func (o *PollOption) Vote(pollName, userName string) *Error {
+	code := http.StatusInternalServerError
+	err := env.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("polls"))
+		if b == nil {
+			code = http.StatusNotFound
+			return errors.New("no poll bucket")
+		}
+		val := b.Get([]byte(pollName))
+		if val == nil {
+			return errors.New("no such poll")
+		}
+
+		poll := &Poll{}
+		if err := json.Unmarshal(val, poll); err != nil {
+			return errors.Wrap(err, "poll unmarshal failed")
+		}
+		for _, option := range poll.Options {
+			if o.Response == option.Response {
+				if option.Votes == nil {
+					option.Votes = map[string]bool{}
+				}
+				option.Votes[userName] = true
+			} else {
+				delete(option.Votes, userName)
+			}
+		}
+
+		jsonBytes, err := json.Marshal(poll)
+		if err != nil {
+			return errors.Wrap(err, "poll marshal failed")
+		}
+		err = b.Put([]byte(pollName), jsonBytes)
+		if err != nil {
+			return errors.Wrap(err, "vote failed")
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return &Error{Code: code, Message: err}
+	}
+	return nil
+}
 
 func PollListing() ([]Poll, error) {
 	return nil, nil
