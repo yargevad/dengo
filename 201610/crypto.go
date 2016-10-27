@@ -34,7 +34,7 @@ func JWTString(name string) (string, error) {
 func JWTUser(r *http.Request) string {
 	ctx := r.Context()
 	token, ok := ctx.Value("jwt").(*jwt.Token)
-	if !ok {
+	if !ok || token == nil {
 		return ""
 	}
 	claims := token.Claims

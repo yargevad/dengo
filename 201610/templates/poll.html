@@ -1,0 +1,68 @@
+<html>{{ $Top := . }}
+  <head>
+    <title>Poll: {{ .Poll.Question }}</title>
+    <script language="javascript">
+      function castVote(poll, vote) {
+        var f = document.getElementById(poll);
+        f.children[0].value = vote;
+        f.submit();
+      }
+    </script>
+  </head>
+  <body>
+
+    <center>
+    <table cellspacing="5" border="0">
+      <tr>
+        <td align="right">
+          {{ if $Top.LoggedIn }}
+          Welcome, <b>{{ .Username }}</b>! (<a href="/logout">sign out</a>)
+          {{ else }}
+          <form method="POST" action="/login">
+            <a href="/signup">sign up</a> or:
+            <input type="text" name="Name" size="10" />
+            <input type="password" name="Pass" size="10" />
+            <input type="submit" value="sign in" />
+          </form>
+          {{ end }}
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <b>Q</b>: {{ .Poll.Question }}<br/>
+          <form method="POST" action="/polls/{{ .Poll.Name }}" id="{{ .Poll.Name }}">
+            <input type="hidden" value="" name="Response" />
+          </form>
+          <ol>
+            {{ range .Poll.Options }}
+              {{ if $Top.LoggedIn }}
+              <li><a href="javascript:void(0)" onclick="castVote('{{ $Top.Poll.Name }}', '{{ .Response }}');"
+                >{{ .Response }}</a> ({{ .Votes | len }})<br/>
+              {{ range $User, $Bool := .Votes }}
+                {{ $User }}
+              {{ else }}
+                <i>No votes for this response.</i>
+              {{ end }}
+              </li>
+              {{ else }}
+                <li>{{ .Response }} ({{ .Votes | len }})</li>
+              {{ end }}
+            {{ end }}
+          </ol>
+        </td>
+      </tr>
+      <tr>
+        <td align="right">
+          {{ if $Top.LoggedIn }}
+          <a href="/polls/create">Create a poll!</a>
+          {{ else }}
+          <a href="/login">Sign in</a> to create a poll!
+          {{ end }}
+          <br/><a href="/">Show Polls</a>
+        </td>
+      </tr>
+    </table>
+    </center>
+
+  </body>
+</html>

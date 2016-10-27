@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"regexp"
 
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
@@ -25,10 +28,31 @@ const (
 	pollPostMax int64 = 4096
 )
 
-func PollsGet(w http.ResponseWriter, r *http.Request) {
-	code := http.StatusInternalServerError
-	//inType := r.Context().Value("content-type").(string)
-	// TODO: pagination
+func PollByName(pollName string) (*Poll, error) {
+	var poll *Poll
+	err := env.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("polls"))
+		if b == nil {
+			return errors.New("no poll bucket")
+		}
+		// iterate over all keys in the bucket
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if string(k) != pollName {
+				continue
+			}
+			poll = &Poll{}
+			err := json.Unmarshal(v, poll)
+			if err != nil {
+				return errors.Wrap(err, "poll unmarshal failed")
+			}
+		}
+		return nil
+	})
+	return poll, err
+}
+
+func AllPolls() (map[string]Poll, error) {
 	polls := map[string]Poll{}
 	err := env.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("polls"))
@@ -47,7 +71,13 @@ func PollsGet(w http.ResponseWriter, r *http.Request) {
 		}
 		return nil
 	})
+	return polls, err
+}
 
+func PollsGet(w http.ResponseWriter, r *http.Request) {
+	code := http.StatusInternalServerError
+	//inType := r.Context().Value("content-type").(string)
+	polls, err := AllPolls()
 	if err != nil {
 		e := &Error{Code: code, Message: err}
 		e.Write(w, r)
@@ -108,6 +138,16 @@ func (p *Poll) Validate() (*Poll, *Error) {
 		return nil, e
 	} else if len(p.Options) == 0 {
 		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Options is required")}
+		return nil, e
+	}
+
+	badName, err := regexp.MatchString(`\W`, p.Name)
+	if err != nil {
+		e := &Error{Code: http.StatusInternalServerError, Message: errors.Wrap(err, "name match failed")}
+		return nil, e
+	}
+	if badName {
+		e := &Error{Code: http.StatusBadRequest, Message: errors.New(`poll names must be alphanumeric`)}
 		return nil, e
 	}
 
@@ -213,6 +253,7 @@ func PollResponsePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("adding option [%s] to [%s]", option.Response, pollName)
 	e = option.Add(pollName)
 	if e != nil {
 		e.Write(w, r)
@@ -264,8 +305,6 @@ func (o *PollOption) Add(pollName string) *Error {
 	return nil
 }
 
-func PollVoteGet(w http.ResponseWriter, r *http.Request) {}
-
 func PollVotePost(w http.ResponseWriter, r *http.Request) {
 	inType := r.Context().Value("content-type").(string)
 	pollName := chi.URLParam(r, "pollname")
@@ -297,6 +336,9 @@ func PollVotePost(w http.ResponseWriter, r *http.Request) {
 		e.Write(w, r)
 		return
 	}
+
+	w.Header().Set("Location", fmt.Sprintf("/polls/%s", pollName))
+	w.WriteHeader(http.StatusFound)
 }
 
 func (o *PollOption) Validate() (*PollOption, *Error) {
@@ -388,8 +430,4 @@ func (o *PollOption) Vote(pollName, userName string) *Error {
 		return &Error{Code: code, Message: err}
 	}
 	return nil
-}
-
-func PollListing() ([]Poll, error) {
-	return nil, nil
 }

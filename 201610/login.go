@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"time"
@@ -20,6 +21,31 @@ type User struct {
 const (
 	loginPostMax int64 = 1024
 )
+
+var loginTemplate *template.Template
+
+func init() {
+	loginTemplate = template.Must(template.ParseFiles("templates/login.html"))
+}
+
+func LoginGet(w http.ResponseWriter, r *http.Request) {
+	user := JWTUser(r)
+	if user != "" {
+		w.Header().Set("Location", "/")
+		w.WriteHeader(http.StatusFound)
+		return
+	}
+
+	err := loginTemplate.Execute(w, nil)
+	if err != nil {
+		e := &Error{
+			Code:    http.StatusInternalServerError,
+			Message: errors.Wrap(err, "executing login template"),
+		}
+		e.Write(w, r)
+		return
+	}
+}
 
 func LoginPost(w http.ResponseWriter, r *http.Request) {
 	inType := r.Context().Value("content-type").(string)
@@ -57,6 +83,9 @@ func LoginPost(w http.ResponseWriter, r *http.Request) {
 		e.Write(w, r)
 		return
 	}
+
+	w.Header().Set("Location", "/")
+	w.WriteHeader(http.StatusFound)
 }
 
 func (u *User) Validate() (*User, *Error) {

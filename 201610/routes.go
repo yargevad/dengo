@@ -56,11 +56,13 @@ func buildRouter() http.Handler {
 
 	// This application lets users create polls and vote (best beer, best pizza)
 
+	r.Use(tokenAuth.Verifier)
 	// GETting / shows links to the polls
 	//   bonus: with totals cached once a second
 	r.Get("/", Index)
 
 	// GETting /login shows auth info form
+	r.Get("/login", LoginGet)
 	// Attempts login
 	r.Post("/login", LoginPost)
 
@@ -79,7 +81,6 @@ func buildRouter() http.Handler {
 
 		// The handlers in this group reqire successful login first.
 		r.Group(func(r chi.Router) {
-			r.Use(tokenAuth.Verifier)
 			r.Use(LogAuthErrors)
 			r.Use(jwtauth.Authenticator)
 
@@ -89,8 +90,8 @@ func buildRouter() http.Handler {
 			r.Post("/create", PollsCreatePost)
 			// Adds a response to an existing poll
 			r.Post("/:pollname/response", PollResponsePost)
-			// Displays voting form
-			r.Get("/:pollname", PollVoteGet)
+			// Displays voting/status form
+			r.Get("/:pollname", PollViewGet)
 			// Submits vote
 			r.Post("/:pollname", PollVotePost)
 		})

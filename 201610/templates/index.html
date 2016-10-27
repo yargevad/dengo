@@ -1,0 +1,64 @@
+<html>{{ $Top := . }}
+  <head>
+    <title>Active Polls</title>
+    <script language="javascript">
+      function castVote(poll, vote) {
+        var f = document.getElementById(poll);
+        f.children[0].value = vote;
+        f.submit();
+      }
+    </script>
+  </head>
+  <body>
+
+    <center>
+    <table cellspacing="5" border="0">
+      <tr>
+        <td align="right">
+          {{ if $Top.LoggedIn }}
+          Welcome, <b>{{ .Username }}</b>! (<a href="/logout">sign out</a>)
+          {{ else }}
+          <form method="POST" action="/login">
+            <a href="/signup">sign up</a> or:
+            <input type="text" name="Name" size="10" />
+            <input type="password" name="Pass" size="10" />
+            <input type="submit" value="sign in" />
+          </form>
+          {{ end }}
+        </td>
+      </tr>
+      {{ range $Name, $Poll := .Polls }}
+      <tr>
+        <td>
+          <b>Q</b>: {{ $Poll.Question }}<br/>
+          <form method="POST" action="/polls/{{ .Name }}" id="{{ $Name }}">
+            <input type="hidden" value="" name="Response" />
+          </form>
+          <ol>
+            {{ range $Poll.Options }}
+              {{ if $Top.LoggedIn }}
+              <li><a href="javascript:void(0)" onclick="castVote('{{ $Name }}', '{{ .Response }}');">{{ .Response }}</a> ({{ .Votes | len }})</li>
+              {{ else }}
+                <li>{{ .Response }} ({{ .Votes | len }})</li>
+              {{ end }}
+            {{ end }}
+          </ol>
+        </td>
+      </tr>
+      {{ else }}
+      <tr><td><b>No polls.</b></td></tr>
+      {{end}}
+      <tr>
+        <td align="right">
+          {{ if $Top.LoggedIn }}
+          <a href="/polls/create">Create a poll!</a>
+          {{ else }}
+          <a href="/login">Sign in</a> to create a poll!
+          {{ end }}
+        </td>
+      </tr>
+    </table>
+    </center>
+
+  </body>
+</html>
