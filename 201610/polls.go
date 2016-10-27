@@ -187,8 +187,84 @@ func (p *Poll) Save() *Error {
 	return nil
 }
 
-func PollResponsePost(w http.ResponseWriter, r *http.Request) {}
-func PollVoteGet(w http.ResponseWriter, r *http.Request)      {}
+func PollResponsePost(w http.ResponseWriter, r *http.Request) {
+	inType := r.Context().Value("content-type").(string)
+	pollName := chi.URLParam(r, "pollname")
+
+	// limit the amount of data we accept for a "poll create" request
+	r.Body = http.MaxBytesReader(w, r.Body, pollPostMax)
+	defer r.Body.Close()
+
+	var option *PollOption
+	var e *Error
+	switch {
+	case inType == FormURL:
+		option, e = PollOptionFromForm(r)
+	case inType == JSON:
+		option, e = PollOptionFromJSON(r.Body)
+	default:
+		e = &Error{
+			Code:    http.StatusUnsupportedMediaType,
+			Message: errors.New("supported types are form, json"),
+		}
+	}
+	if e != nil {
+		e.Write(w, r)
+		return
+	}
+
+	e = option.Add(pollName)
+	if e != nil {
+		e.Write(w, r)
+		return
+	}
+}
+
+func (o *PollOption) Add(pollName string) *Error {
+	code := http.StatusInternalServerError
+	err := env.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("polls"))
+		if b == nil {
+			code = http.StatusNotFound
+			return errors.New("no poll bucket")
+		}
+		val := b.Get([]byte(pollName))
+		if val == nil {
+			code = http.StatusNotFound
+			return errors.New("no such poll")
+		}
+
+		poll := &Poll{}
+		if err := json.Unmarshal(val, poll); err != nil {
+			return errors.Wrap(err, "poll unmarshal failed")
+		}
+
+		for _, option := range poll.Options {
+			if option.Response == o.Response {
+				return nil
+			}
+		}
+		poll.Options = append(poll.Options, &PollOption{Response: o.Response})
+
+		jsonBytes, err := json.Marshal(poll)
+		if err != nil {
+			return errors.Wrap(err, "poll marshal failed")
+		}
+		err = b.Put([]byte(pollName), jsonBytes)
+		if err != nil {
+			return errors.Wrap(err, "vote failed")
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return &Error{Code: code, Message: err}
+	}
+	return nil
+}
+
+func PollVoteGet(w http.ResponseWriter, r *http.Request) {}
 
 func PollVotePost(w http.ResponseWriter, r *http.Request) {
 	inType := r.Context().Value("content-type").(string)
@@ -277,6 +353,7 @@ func (o *PollOption) Vote(pollName, userName string) *Error {
 		}
 		val := b.Get([]byte(pollName))
 		if val == nil {
+			code = http.StatusNotFound
 			return errors.New("no such poll")
 		}
 
