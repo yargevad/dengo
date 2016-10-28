@@ -18,21 +18,18 @@ func ZapLogger(next http.Handler) http.Handler {
 	return middleware.FormattedLogger(zapLogFormatter, next)
 }
 
-type ZapLogFormatter struct {
-	code   int
-	fields []zap.Field
-}
+type ZapLogFormatter struct{}
 
-func (z *ZapLogFormatter) FormatRequest(r *http.Request) middleware.LogFormatter {
-	var ctx ZapLogFormatter
-	ctx.fields = make([]zap.Field, 0, 10)
+func (z *ZapLogFormatter) FormatLog(r *http.Request, code, nbytes int, elapsed time.Duration, err error) {
+	var f10 [10]zap.Field
+	var fields []zap.Field = f10[:0]
 
 	reqID := middleware.GetReqID(r.Context())
 	if reqID != "" {
-		ctx.fields = append(ctx.fields, zap.String("reqID", reqID))
+		fields = append(fields, zap.String("reqID", reqID))
 	}
 
-	ctx.fields = append(ctx.fields,
+	fields = append(fields,
 		zap.String("method", r.Method),
 		zap.String("host", r.Host),
 		zap.String("uri", r.RequestURI),
@@ -40,31 +37,23 @@ func (z *ZapLogFormatter) FormatRequest(r *http.Request) middleware.LogFormatter
 		zap.String("remote", r.RemoteAddr))
 
 	if r.TLS != nil {
-		ctx.fields = append(ctx.fields, zap.Bool("tls", true))
+		fields = append(fields, zap.Bool("tls", true))
 	} else {
-		ctx.fields = append(ctx.fields, zap.Bool("tls", false))
+		fields = append(fields, zap.Bool("tls", false))
 	}
 
-	return &ctx
-}
+	if err == nil {
+		fields = append(fields, zap.Int("code", code),
+			zap.Int("bytes", nbytes),
+			zap.Duration("elapsed", elapsed))
+	} else {
+		fields = append(fields, zap.Error(err), zap.Stack())
+	}
 
-func (ctx *ZapLogFormatter) FormatResponse(code, bytes int, elapsed time.Duration) {
-	ctx.code = code
-	ctx.fields = append(ctx.fields, zap.Int("code", code))
-	ctx.fields = append(ctx.fields, zap.Int("bytes", bytes))
-	ctx.fields = append(ctx.fields, zap.Duration("elapsed", elapsed))
-}
-
-func (ctx *ZapLogFormatter) Log() {
 	switch {
-	case ctx.code < 500:
-		env.Log.Info("served", ctx.fields...)
+	case code < 500:
+		env.Log.Info("served", fields...)
 	default:
-		env.Log.Warn("error", ctx.fields...)
+		env.Log.Warn("error", fields...)
 	}
-}
-
-func (ctx *ZapLogFormatter) Recover(err error) {
-	ctx.fields = append(ctx.fields, zap.Error(err.(error)))
-	ctx.Log()
 }
