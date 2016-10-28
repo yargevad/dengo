@@ -1,7 +1,5 @@
 package main
 
-// Process command-line args and initialize listeners
-
 import (
 	"flag"
 	"fmt"

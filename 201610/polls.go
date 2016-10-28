@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"regexp"
 
@@ -174,6 +173,9 @@ func PollsCreatePost(w http.ResponseWriter, r *http.Request) {
 		e.Write(w, r)
 		return
 	}
+
+	w.Header().Set("Location", "/")
+	w.WriteHeader(http.StatusFound)
 }
 
 func (p *Poll) Validate() (*Poll, *Error) {
@@ -182,9 +184,6 @@ func (p *Poll) Validate() (*Poll, *Error) {
 		return nil, e
 	} else if len(p.Question) == 0 {
 		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Poll is required")}
-		return nil, e
-	} else if len(p.Options) == 0 {
-		e := &Error{Code: http.StatusBadRequest, Message: errors.New("Options is required")}
 		return nil, e
 	}
 
@@ -300,12 +299,14 @@ func PollResponsePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("adding option [%s] to [%s]", option.Response, pollName)
 	e = option.Add(pollName)
 	if e != nil {
 		e.Write(w, r)
 		return
 	}
+
+	w.Header().Set("Location", "/")
+	w.WriteHeader(http.StatusFound)
 }
 
 func (o *PollOption) Add(pollName string) *Error {

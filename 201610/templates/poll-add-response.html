@@ -1,11 +1,11 @@
 <html>
   <head>
-    <title>Create a Poll</title>
+    <title>Add a Poll Response</title>
   </head>
   <body>
 
     <center>
-    <form method="POST" action="/polls/create">
+    <form method="POST" action="/polls/{{ .Name }}/response">
     <table cellspacing="5">
       <tr>
         <td colspan="2">Adding a response to poll: <a href="/polls/{{ .Name }}">{{ .Name }}</a></td>

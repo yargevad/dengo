@@ -30,7 +30,12 @@
       {{ range $Name, $Poll := .Polls }}
       <tr>
         <td>
-          <b>Q</b>: {{ $Poll.Question }}<br/>
+          <b>Q</b>:
+            {{ if $Top.LoggedIn }}
+              <a href="/polls/{{ $Name }}">{{ $Poll.Question }}</a>
+            {{ else }}
+              {{ $Poll.Question }}
+            {{ end }}<br/>
           <form method="POST" action="/polls/{{ .Name }}" id="{{ $Name }}">
             <input type="hidden" value="" name="Response" />
           </form>
@@ -41,6 +46,8 @@
               {{ else }}
                 <li>{{ .Response }} ({{ .Votes | len }})</li>
               {{ end }}
+            {{ else }}
+              <i>No poll options yet</i>
             {{ end }}
           </ol>
         </td>
