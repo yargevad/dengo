@@ -1,0 +1,32 @@
+<html>
+  <head>
+    <title>Create a Poll</title>
+  </head>
+  <body>
+
+    <center>
+    <form method="POST" action="/polls/create">
+    <table cellspacing="5">
+      <tr>
+        <td>name:</td>
+        <td><input type="text" name="Name" /></td>
+      </tr>
+      <tr>
+        <td>question:</td>
+        <td><input type="text" name="Question" /></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><input type="submit" value="create poll" /></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td align="right">
+          <br/><a href="/">Show Polls</a>
+        </td>
+      </tr>
+    </table>
+    </form>
+    </center>
+  </body>
+</html>

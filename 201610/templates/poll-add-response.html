@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <title>Create a Poll</title>
+  </head>
+  <body>
+
+    <center>
+    <form method="POST" action="/polls/create">
+    <table cellspacing="5">
+      <tr>
+        <td colspan="2">Adding a response to poll: <a href="/polls/{{ .Name }}">{{ .Name }}</a></td>
+      </tr>
+      <tr>
+        <td>response:</td>
+        <td><input type="text" name="Response" /></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><input type="submit" value="add response" /></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td align="right">
+          <br/><a href="/">Show Polls</a>
+        </td>
+      </tr>
+    </table>
+    </form>
+    </center>
+  </body>
+</html>

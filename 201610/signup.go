@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"io"
 	"net/http"
 
@@ -19,6 +20,31 @@ const (
 	signupPostMax int64 = 1024
 	bcryptCost    int   = 13
 )
+
+var signupTemplate *template.Template
+
+func init() {
+	signupTemplate = template.Must(template.ParseFiles("templates/signup.html"))
+}
+
+func SignupGet(w http.ResponseWriter, r *http.Request) {
+	user := JWTUser(r)
+	if user != "" {
+		w.Header().Set("Location", "/")
+		w.WriteHeader(http.StatusFound)
+		return
+	}
+
+	err := signupTemplate.Execute(w, nil)
+	if err != nil {
+		e := &Error{
+			Code:    http.StatusInternalServerError,
+			Message: errors.Wrap(err, "executing signup template"),
+		}
+		e.Write(w, r)
+		return
+	}
+}
 
 func SignupPost(w http.ResponseWriter, r *http.Request) {
 	inType := r.Context().Value("content-type").(string)
@@ -49,6 +75,9 @@ func SignupPost(w http.ResponseWriter, r *http.Request) {
 		e.Write(w, r)
 		return
 	}
+
+	w.Header().Set("Location", "/")
+	w.WriteHeader(http.StatusFound)
 }
 
 func (s *Signup) Validate() (*Signup, *Error) {

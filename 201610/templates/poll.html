@@ -54,6 +54,7 @@
       <tr>
         <td align="right">
           {{ if $Top.LoggedIn }}
+          <a href="/polls/{{ .Name }}/response">Add a response to this poll</a><br />
           <a href="/polls/create">Create a poll!</a>
           {{ else }}
           <a href="/login">Sign in</a> to create a poll!

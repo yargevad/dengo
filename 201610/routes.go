@@ -70,6 +70,7 @@ func buildRouter() http.Handler {
 	r.Get("/logout", LogoutGet)
 	// GETting /signup shows account info form
 	//   no email required, just hardcoded secret from slides
+	r.Get("/signup", SignupGet)
 	// Attempts account creation
 	r.Post("/signup", SignupPost)
 
@@ -88,6 +89,7 @@ func buildRouter() http.Handler {
 			r.Get("/create", PollsCreateGet)
 			// Attempts poll creation
 			r.Post("/create", PollsCreatePost)
+			r.Get("/:pollname/response", PollResponseGet)
 			// Adds a response to an existing poll
 			r.Post("/:pollname/response", PollResponsePost)
 			// Displays voting/status form

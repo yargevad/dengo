@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
@@ -27,6 +28,53 @@ type PollOption struct {
 const (
 	pollPostMax int64 = 4096
 )
+
+var (
+	pollCreateTemplate      *template.Template
+	pollAddResponseTemplate *template.Template
+)
+
+func init() {
+	pollCreateTemplate = template.Must(template.ParseFiles("templates/poll-create.html"))
+	pollAddResponseTemplate = template.Must(template.ParseFiles("templates/poll-add-response.html"))
+}
+
+func PollResponseGet(w http.ResponseWriter, r *http.Request) {
+	pollName := chi.URLParam(r, "pollname")
+	poll, err := PollByName(pollName)
+	if err != nil {
+		e := &Error{Code: http.StatusInternalServerError, Message: err}
+		e.Write(w, r)
+		return
+	}
+	if poll == nil {
+		e := &Error{Code: http.StatusNotFound, Message: errors.New("no such poll")}
+		e.Write(w, r)
+		return
+	}
+
+	err = pollAddResponseTemplate.Execute(w, poll)
+	if err != nil {
+		e := &Error{
+			Code:    http.StatusInternalServerError,
+			Message: errors.Wrap(err, "executing poll add response template"),
+		}
+		e.Write(w, r)
+		return
+	}
+}
+
+func PollsCreateGet(w http.ResponseWriter, r *http.Request) {
+	err := pollCreateTemplate.Execute(w, nil)
+	if err != nil {
+		e := &Error{
+			Code:    http.StatusInternalServerError,
+			Message: errors.Wrap(err, "executing login template"),
+		}
+		e.Write(w, r)
+		return
+	}
+}
 
 func PollByName(pollName string) (*Poll, error) {
 	var poll *Poll
@@ -96,7 +144,6 @@ func PollsGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func PollResultsGet(w http.ResponseWriter, r *http.Request) {}
-func PollsCreateGet(w http.ResponseWriter, r *http.Request) {}
 
 func PollsCreatePost(w http.ResponseWriter, r *http.Request) {
 	inType := r.Context().Value("content-type").(string)
