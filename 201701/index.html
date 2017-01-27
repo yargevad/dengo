@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Title</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+
+      img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      .red {
+        color: #f00;
+      }
+      .fixed {
+        font-family: fixed-width, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Text Processing w/ Go
+
+## Porting Perl regexp to Go, GNU cut vs. CSV cut
+
+---
+
+# Agenda
+
+1. Porting Perl regexp to Go
+2. GNU cut, CSV, and Go
+
+---
+
+# Porting Perl regexp to Go
+
+---
+
+# Porting Perl regexp to Go
+
+.bigimage[![alt](img/regex-hard-life.png "title")]
+
+https://twitter.com/hoverbird/status/750826785781063680
+
+---
+
+# Porting Perl regexp to Go
+
+## Why Perl?
+
+---
+
+# Porting Perl regexp to Go
+
+## Why Perl?
+
+- It's great for ad hoc text munging
+
+---
+
+# Porting Perl regexp to Go
+
+## Why Perl?
+
+- It's great for ad hoc text munging
+- It's installed almost everywhere (except Windows)
+
+---
+
+# Porting Perl regexp to Go
+
+## Why Perl?
+
+- It's great for ad hoc text munging  
+- It's installed almost everywhere (except Windows)
+- I'm good at it, PCRE is my jam
+
+---
+
+# Porting Perl regexp to Go
+
+## Go's `regexp` package is limited (by design)
+
+---
+
+# Porting Perl regexp to Go
+
+## Go's `regexp` package is limited (by design)
+
+- No support for alternation of 2+ characters  
+  `^(?i:foo|bar)$`
+
+---
+
+# Porting Perl regexp to Go
+
+## Go's `regexp` package is limited (by design)
+
+- No support for alternation of 2+ characters  
+  `^(?i:foo|bar)$`
+- No DoS via backtracking
+
+---
+
+# Porting Perl regexp to Go
+
+## Go's `regexp` package is limited (by design)
+
+- No support for alternation of 2+ characters  
+  `^(?i:foo|bar)$`
+- No DoS via backtracking
+- `*Regexp.Simplify()`
+
+---
+
+# Porting Perl regexp to Go
+
+## So how to port Perl regexp to Go?
+
+---
+
+# Porting Perl regexp to Go
+
+## So how to port Perl regexp to Go?
+
+- Use an array of `*regexp.Regexp`s
+
+---
+
+# Porting Perl regexp to Go
+
+## So how to port Perl regexp to Go?
+
+- Use an array of `*regexp.Regexp`s
+- Wrap `regexp` functions
+
+---
+
+# Porting Perl regexp to Go
+
+## So how to port Perl regexp to Go?
+
+- Use an array of `*regexp.Regexp`s
+- Wrap `regexp` functions
+- Iterate in order, first match wins
+
+---
+
+# Porting Perl regexp to Go
+
+## So how to port Perl regexp to Go?
+
+- Use an array of `*regexp.Regexp`s
+- Wrap `regexp` functions
+- Iterate in order, first match wins
+
+https://github.com/yargevad/regexpx
+
+---
+
+# GNU cut, CSV, and Go
+
+## GNU cut is great (for most things)
+
+---
+
+# GNU cut, CSV, and Go
+
+## GNU cut is great (for most things)
+
+- `cut -d, -f2,3,4`
+
+---
+
+# GNU cut, CSV, and Go
+
+## GNU cut is great (for most things)
+
+- `cut -d, -f2,3,4`
+- except: `foo,"bar,baz",quux`
+
+---
+
+# GNU cut, CSV, and Go
+
+## GNU cut is great (for most things)
+
+- `cut -d, -f2,3,4`
+- except: `foo,"bar,baz",quux`
+- probably not what you want:  
+  `$ cut -d, -f 1,2 test.csv`  
+  `foo,"bar`  
+
+---
+
+# GNU cut, CSV, and Go
+
+## Go's `encoding/csv` solves this
+
+---
+
+# GNU cut, CSV, and Go
+
+## Let's use Go's `encoding/csv`!
+
+- purpose built Does What I Mean
+- same weird CSV: `foo,"bar,baz",quux`
+- does what you mean:  
+  `$ csvcut -f 1,2 test.csv`  
+  `foo,"bar,baz"`
+
+https://github.com/yargevad/texttools/tree/master/cmd/csvcut
+
+---
+
+# GNU cut, CSV, and Go
+
+## Executable size!
+
+---
+
+# GNU cut, CSV, and Go
+
+## Executable size!
+
+- GNU cut is really small:  
+  .fixed[$ ls -lah `which cut`]  
+  .fixed[-rwxr-xr-x  1 root  wheel    .red[23K] Jul  8  2016 /usr/bin/cut]  
+
+---
+
+# GNU cut, CSV, and Go
+
+## Executable size!
+
+- GNU cut is really small:  
+  .fixed[$ ls -lah `which cut`]  
+  .fixed[-rwxr-xr-x  1 root  wheel    .red[23K] Jul  8  2016 /usr/bin/cut]  
+- It's dynamically linked!
+
+---
+
+# GNU cut, CSV, and Go
+
+## Executable size!
+
+- GNU cut is really small:  
+  .fixed[$ ls -lah `which cut`]  
+  .fixed[-rwxr-xr-x  1 root  wheel    .red[23K] Jul  8  2016 /usr/bin/cut]  
+- It's dynamically linked!
+- Even including shared libraries (OSX):  
+  .fixed[$ otool -L `which cut` ]  
+  .fixed[/usr/bin/cut:]  
+  .fixed[/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1225.0.0)]  
+  .fixed[$ ls -lrth /usr/lib/libSystem.B.dylib]  
+  .fixed[-rwxr-xr-x  1 root  wheel    .red[59K] Sep 26 02:42 /usr/lib/libSystem.B.dylib]  
+
+---
+
+# GNU cut, CSV, and Go
+
+## Executable size!
+
+- GNU cut is really small:  
+  .fixed[$ ls -lah `` `which cut` ``]  
+  .fixed[-rwxr-xr-x  1 root  wheel    .red[23K] Jul  8  2016 /usr/bin/cut]  
+- It's dynamically linked!
+- Even including shared libraries (OSX):  
+  .fixed[$ otool -L `which cut` ]  
+  .fixed[/usr/bin/cut:]  
+  .fixed[/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1225.0.0)]  
+  .fixed[$ ls -lrth /usr/lib/libSystem.B.dylib]  
+  .fixed[-rwxr-xr-x  1 root  wheel    .red[59K] Sep 26 02:42 /usr/lib/libSystem.B.dylib]  
+- `csvcut` (statically linked) isn't:  
+  .fixed[$ ls -lah `which csvcut` ]  
+  .fixed[-rwxr-xr-x  1 dgray  staff   .red[3.1M] Apr  8  2016 ~/go/bin/csvcut]
+
+    </textarea>
+    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
