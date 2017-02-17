@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Title</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+
+      img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      .red {
+        color: #f00;
+      }
+      .fixed {
+        font-family: fixed-width, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# `database/sql` in Go 1.8
+
+## What's different, and why
+
+---
+
+# Agenda
+
+1. Fiddling with Go versions
+2. Actual database stuff
+
+https://beta.golang.org/doc/go1.8#database_sql  
+https://blog.gopheracademy.com/advent-2016/go-1.8/  
+https://blog.gopheracademy.com/advent-2016/database_sql/  
+https://docs.google.com/document/d/1F778e7ZSNiSmbju3jsEWzShcb8lIO4kDyfKDNm4PNd8/edit
+
+---
+
+# Fiddling with Go versions
+
+--
+
+How can we have multiple versions of Go installed at once?
+
+--
+
+.bigimage[![alt](img/3gophers.jpg "title")]
+
+---
+
+# Fiddling with Go versions
+
+How can we have multiple versions of Go installed at once?
+
+1. DIY: https://dave.cheney.net/2014/09/13/how-to-install-multiple-versions
+
+  - build each version yourself, call the one you want directly
+
+--
+
+2. `gvm`: https://github.com/moovweb/gvm  
+  - need go 1.4 to bootstrap
+  `$ gvm install go1.8rc3`
+
+--
+
+3. https://golang.org/dl/#unstable
+  - build the release candidate yourself, call that executable (`go1.8rc3`)  
+  `$ go get golang.org/x/build/version/go1.8rc3`
+
+--
+
+... I didn't do any of these things.
+
+---
+
+# Fiddling with Go versions .red[on OSX]
+
+```
+$ brew info go
+go: stable 1.7.5, devel 1.8rc3, HEAD
+The Go programming language
+https://golang.org
+/opt/boxen/homebrew/Cellar/go/1.5.2 (5,339 files, 260M)
+  Built from source on 2016-01-07 at 10:03:24
+/opt/boxen/homebrew/Cellar/go/1.6.2 (5,778 files, 325.4M)
+  Built from source on 2016-06-02 at 16:24:00
+/opt/boxen/homebrew/Cellar/go/1.7 (6,435 files, 250.7M) *
+  Built from source on 2016-08-17 at 12:31:34
+```
+
+--
+
+```
+$ brew install go --devel
+Error: go-1.7 already installed
+To install this version, first `brew unlink go`
+```
+
+--
+
+```
+$ brew unlink go
+Unlinking /opt/boxen/homebrew/Cellar/go/1.7... 3 symlinks removed
+```
+
+---
+
+# Fiddling with Go versions .red[on OSX]
+
+```
+$ brew install go --devel
+==> Using the sandbox
+==> Downloading https://storage.googleapis.com/golang/go1.8rc3.src.tar.gz
+######################################################################## 100.0%
+==> Downloading https://storage.googleapis.com/golang/go1.7.darwin-amd64.tar.gz
+Already downloaded: /opt/boxen/cache/homebrew/go--gobootstrap-1.7.tar.gz
+==> ./make.bash --no-clean
+==> /opt/boxen/homebrew/Cellar/go/1.8rc3/bin/go install -race std
+==> Cloning https://go.googlesource.com/tools.git
+Updating /opt/boxen/cache/homebrew/go--gotools--git
+==> Checking out branch master
+==> go build
+==> Caveats
+As of go 1.2, a valid GOPATH is required to use the `go get` command:
+  https://golang.org/doc/code.html#GOPATH
+
+You may wish to add the GOROOT-based install location to your PATH:
+  export PATH=$PATH:/opt/boxen/homebrew/opt/go/libexec/bin
+==> Summary
+🍺  /opt/boxen/homebrew/Cellar/go/1.8rc3: 7,012 files, 281.8M, built in 1 minute 34 seconds
+```
+
+---
+
+# Fiddling with Go versions .red[on OSX]
+
+```
+$ brew help switch
+brew switch name version:
+    Symlink all of the specific version of name's install to Homebrew prefix.
+```
+
+--
+
+```
+$ go version
+go version go1.8rc3 darwin/amd64
+```
+
+--
+
+```
+$ brew switch go 1.7
+Cleaning /opt/boxen/homebrew/Cellar/go/1.5.2
+Cleaning /opt/boxen/homebrew/Cellar/go/1.6.2
+Cleaning /opt/boxen/homebrew/Cellar/go/1.7
+Cleaning /opt/boxen/homebrew/Cellar/go/1.8rc3
+3 links created for /opt/boxen/homebrew/Cellar/go/1.7
+```
+
+--
+
+```
+$ go version
+go version go1.7 darwin/amd64
+```
+
+---
+
+# Actual database stuff
+
+The core `database/sql` package has some new features.
+
+--
+
+- support for `context.Context`
+  - useful for canceling/timing out queries
+  - also "get conn from pool" timeouts
+  - drivers are responsible for full support
+
+  https://beta.golang.org/pkg/database/sql/#DB.QueryContext
+
+--
+
+- transactions support `IsolationLevel`
+  - requires driver support
+  - read-only flag also nearby
+  - probably shorter than typing:  
+    `SET TRANSACTION READ ONLY;`
+
+  https://beta.golang.org/pkg/database/sql/#IsolationLevel
+  https://beta.golang.org/pkg/database/sql/#TxOptions.ReadOnly
+
+---
+
+# Actual database stuff
+
+The core `database/sql` package has some new features.
+
+- SQL types exposed via `*Rows.ColumnTypes()`
+  - requires driver support
+  - column type, length, Go type
+
+  https://beta.golang.org/pkg/database/sql/#Rows.ColumnTypes
+
+--
+
+- multiple result sets in in a `*sql.Rows`
+  - requires driver support
+  - advance with `rows.NextResultSet()`
+
+  https://beta.golang.org/pkg/database/sql/#Rows.NextResultSet
+
+---
+
+# Actual database stuff
+
+The core `database/sql` package has some new features.
+
+- named parameters `WHERE name = @foo`
+  - `sql.Named("foo", "bar")`
+  - requires driver support
+
+  https://beta.golang.org/pkg/database/sql/#Named
+
+--
+
+- driver-specific `DB.Ping` behavior
+  - checks the database
+  - not just the pool
+
+  https://beta.golang.org/pkg/database/sql/driver/#Pinger
+
+---
+
+# Actual database stuff
+
+Most exciting feature to me, personally:  
+
+--
+
+*drum roll*
+
+--
+
+`context.Context` support!
+
+--
+
+.bigimage[![alt](img/lib-pq-1.8.png "title")]
+
+---
+
+class: center, middle
+
+# Questions?
+
+### What's your favorite feature?
+
+.bigimage[![alt](img/selfies-discuss.jpg "title")]
+
+    </textarea>
+    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
